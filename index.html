@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Card Counter</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: white;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .stats {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .suit-stats {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .suit-stat {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255,255,255,0.15);
+            padding: 8px 16px;
+            border-radius: 8px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        
+        .suit-icon {
+            font-size: 1.2rem;
+        }
+        
+        .suit-count {
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: #ffd700;
+        }
+
+        .stat-box {
+            background: rgba(255,255,255,0.15);
+            padding: 15px 25px;
+            border-radius: 12px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #ffd700;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            background: linear-gradient(145deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button.secondary {
+            background: rgba(255,255,255,0.2);
+        }
+
+        .card-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            max-width: 900px;
+            margin: 0 auto;
+            padding-bottom: 30px;
+        }
+        
+        .suit-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+            gap: 8px;
+        }
+        
+        .suit-row-title {
+            grid-column: 1 / -1;
+            text-align: center;
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin-bottom: 8px;
+            color: #ffd700;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        
+        .suit-row-count {
+            background: rgba(255,255,255,0.2);
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.9rem;
+            min-width: 30px;
+            text-align: center;
+        }
+
+        .card {
+            aspect-ratio: 2/3;
+            background: white;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            position: relative;
+            overflow: hidden;
+            user-select: none;
+            border: 1px solid #e2e8f0;
+        }
+        
+        .card-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 3px;
+        }
+
+        .card:hover {
+            transform: translateY(-5px) scale(1.05);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+            z-index: 10;
+        }
+
+        .card.played {
+            background: #2d3748;
+            opacity: 0.6;
+            transform: scale(0.95);
+        }
+
+        .card.played .suit,
+        .card.played .rank {
+            opacity: 0.3;
+        }
+
+        .card-inner {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+        }
+
+        .rank {
+            font-size: 1.2rem;
+            font-weight: bold;
+            line-height: 1;
+        }
+
+        .suit {
+            font-size: 1.8rem;
+            line-height: 1;
+            margin-top: 4px;
+        }
+
+        .top-left {
+            position: absolute;
+            top: 6px;
+            left: 6px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            line-height: 1;
+        }
+
+        .bottom-right {
+            position: absolute;
+            bottom: 6px;
+            right: 6px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            line-height: 1;
+            transform: rotate(180deg);
+        }
+
+        .hearts, .diamonds {
+            color: #e53e3e;
+        }
+
+        .clubs, .spades {
+            color: #1a202c;
+        }
+
+        .played .hearts, .played .diamonds,
+        .played .clubs, .played .spades {
+            color: #718096;
+        }
+
+        .checkmark {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0);
+            font-size: 2rem;
+            color: #48bb78;
+            transition: transform 0.3s ease;
+            pointer-events: none;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            z-index: 10;
+            background: rgba(255,255,255,0.8);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .card.played .checkmark {
+            transform: translate(-50%, -50%) scale(1);
+        }
+        
+        .card.played .card-image {
+            opacity: 0.6;
+            filter: grayscale(0.7);
+        }
+
+        @media (max-width: 768px) {
+            .card{
+                border-radius: 3px;
+            }
+            .card-grid {
+                gap: 10px;
+            }
+            
+            .suit-row {
+                grid-template-columns: repeat(10, 1fr);
+                gap: 2px;
+            }
+            
+            .card {
+                aspect-ratio: 2/3;
+            }
+            
+            h1 {
+                font-size: 1.5rem;
+            }
+            
+            .stats {
+                gap: 10px;
+            }
+            
+            .suit-stats {
+                gap: 8px;
+            }
+            
+            .suit-stat {
+                padding: 4px 8px;
+            }
+            
+            .suit-row-title {
+                font-size: 1rem;
+                margin-bottom: 4px;
+            }
+            
+            .suit-row-count {
+                font-size: 0.8rem;
+                min-width: 25px;
+                padding: 1px 6px;
+            }
+            
+            .checkmark {
+                width: 20px;
+                height: 20px;
+                font-size: 1.2rem;
+            }
+        }
+        
+        @media (max-width: 400px) {
+            .suit-row {
+                grid-template-columns: repeat(10, 1fr);
+                gap: 1px;
+            }
+            
+            .checkmark {
+                width: 30px;
+                height: 30px;
+                font-size: 1.4rem;
+            }
+        }
+
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🃏 Card Counter</h1>
+            <p>Click cards to mark them as played</p>
+            
+            <div class="stats">
+                <div class="stat-box">
+                    <div class="stat-number" id="remaining">52</div>
+                    <div class="stat-label">Remaining</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-number" id="played">0</div>
+                    <div class="stat-label">Played</div>
+                </div>
+            </div>
+            
+            <div class="suit-stats">
+                <div class="suit-stat">
+                    <span class="suit-icon hearts">♥</span>
+                    <span class="suit-count" id="hearts-count">13</span>
+                </div>
+                <div class="suit-stat">
+                    <span class="suit-icon diamonds">♦</span>
+                    <span class="suit-count" id="diamonds-count">13</span>
+                </div>
+                <div class="suit-stat">
+                    <span class="suit-icon clubs">♣</span>
+                    <span class="suit-count" id="clubs-count">13</span>
+                </div>
+                <div class="suit-stat">
+                    <span class="suit-icon spades">♠</span>
+                    <span class="suit-count" id="spades-count">13</span>
+                </div>
+            </div>
+            
+        </header>
+
+        <div class="controls">
+            <button onclick="resetAll()">🔄 Reset All</button>
+            <button onclick="undoLast()" class="secondary">↩️ Undo Last</button>
+            <button onclick="toggleView()" class="secondary">👁️ Toggle Played</button>
+        </div>
+
+        <div class="card-grid" id="cardGrid"></div>
+    </div>
+
+    <script>
+        const suits = [
+            { symbol: '♥', name: 'hearts', color: 'hearts' },
+            { symbol: '♦', name: 'diamonds', color: 'diamonds' },
+            { symbol: '♣', name: 'clubs', color: 'clubs' },
+            { symbol: '♠', name: 'spades', color: 'spades' }
+        ];
+
+        const ranks = [
+            { display: 'A', value: 1 },
+            { display: '2', value: 2 },
+            { display: '3', value: 3 },
+            { display: '4', value: 4 },
+            { display: '5', value: 5 },
+            { display: '6', value: 6 },
+            { display: '7', value: 7 },
+            { display: '8', value: 8 },
+            { display: '9', value: 9 },
+            { display: '10', value: 10 },
+            { display: 'J', value: 11 },
+            { display: 'Q', value: 12 },
+            { display: 'K', value: 13 }
+        ];
+
+        let playedCards = new Set();
+        let history = [];
+        let hidePlayed = false;
+
+        function init() {
+            const grid = document.getElementById('cardGrid');
+            grid.innerHTML = '';
+            
+            suits.forEach(suit => {
+                const suitRow = document.createElement('div');
+                suitRow.className = 'suit-row';
+                
+                const title = document.createElement('div');
+                title.className = 'suit-row-title';
+                title.innerHTML = `
+                    <span class="${suit.color}">${suit.symbol}</span>
+                    ${suit.name.charAt(0).toUpperCase() + suit.name.slice(1)}
+                    <span class="suit-row-count" id="${suit.name}-row-count">13</span>
+                `;
+                suitRow.appendChild(title);
+                
+                ranks.forEach(rank => {
+                    const card = createCard(suit, rank);
+                    suitRow.appendChild(card);
+                });
+                
+                grid.appendChild(suitRow);
+            });
+            
+            updateStats();
+        }
+
+        function createCard(suit, rank) {
+            const cardId = `${suit.name}-${rank.value}`;
+            const card = document.createElement('div');
+            card.className = 'card';
+            card.dataset.id = cardId;
+            card.dataset.suit = suit.name;
+            card.dataset.rank = rank.value;
+            
+            // Generate filename based on card value and suit
+            const suitCode = suit.name.charAt(0).toUpperCase();
+            const rankCode = rank.display;
+            const filename = `${rankCode}${suitCode}.jpg`;
+            
+            card.innerHTML = `
+                <img src="img/${filename}" alt="${rank.display} of ${suit.name}" class="card-image">
+                <div class="checkmark">✓</div>
+            `;
+            
+            card.addEventListener('click', () => toggleCard(card));
+            return card;
+        }
+
+        function toggleCard(card) {
+            const id = card.dataset.id;
+            
+            if (playedCards.has(id)) {
+                playedCards.delete(id);
+                card.classList.remove('played');
+                history = history.filter(h => h !== id);
+            } else {
+                playedCards.add(id);
+                card.classList.add('played');
+                history.push(id);
+            }
+            
+            updateStats();
+            saveState();
+        }
+
+        function updateStats() {
+            const total = 52;
+            const played = playedCards.size;
+            const remaining = total - played;
+            // Update main stats
+            document.getElementById('remaining').textContent = remaining;
+            document.getElementById('played').textContent = played;
+            
+            // Update suit-specific counts
+            const suitCounts = {
+                hearts: 13,
+                diamonds: 13,
+                clubs: 13,
+                spades: 13
+            };
+            
+            // Count played cards per suit
+            playedCards.forEach(cardId => {
+                const suit = cardId.split('-')[0];
+                if (suitCounts.hasOwnProperty(suit)) {
+                    suitCounts[suit]--;
+                }
+            });
+            
+            // Update suit counters
+            document.getElementById('hearts-count').textContent = suitCounts.hearts;
+            document.getElementById('diamonds-count').textContent = suitCounts.diamonds;
+            document.getElementById('clubs-count').textContent = suitCounts.clubs;
+            document.getElementById('spades-count').textContent = suitCounts.spades;
+            
+            // Update row counters
+            document.getElementById('hearts-row-count').textContent = suitCounts.hearts;
+            document.getElementById('diamonds-row-count').textContent = suitCounts.diamonds;
+            document.getElementById('clubs-row-count').textContent = suitCounts.clubs;
+            document.getElementById('spades-row-count').textContent = suitCounts.spades;
+        }
+
+        function resetAll() {
+            if (playedCards.size === 0) return;
+            
+            if (confirm('Reset all cards?')) {
+                playedCards.clear();
+                history = [];
+                document.querySelectorAll('.card').forEach(card => {
+                    card.classList.remove('played');
+                });
+                updateStats();
+                saveState();
+            }
+        }
+
+        function undoLast() {
+            if (history.length === 0) return;
+            
+            const lastId = history.pop();
+            playedCards.delete(lastId);
+            const card = document.querySelector(`[data-id="${lastId}"]`);
+            if (card) card.classList.remove('played');
+            updateStats();
+            saveState();
+        }
+
+        function toggleView() {
+            hidePlayed = !hidePlayed;
+            document.querySelectorAll('.card').forEach(card => {
+                const id = card.dataset.id;
+                if (hidePlayed && playedCards.has(id)) {
+                    card.style.opacity = '0';
+                    card.style.pointerEvents = 'none';
+                } else {
+                    card.style.opacity = '';
+                    card.style.pointerEvents = '';
+                }
+            });
+        }
+
+        function saveState() {
+            localStorage.setItem('cardCounterState', JSON.stringify([...playedCards]));
+            localStorage.setItem('cardCounterHistory', JSON.stringify(history));
+        }
+
+        function loadState() {
+            const saved = localStorage.getItem('cardCounterState');
+            const savedHistory = localStorage.getItem('cardCounterHistory');
+            
+            if (saved) {
+                playedCards = new Set(JSON.parse(saved));
+                if (savedHistory) history = JSON.parse(savedHistory);
+                
+                document.querySelectorAll('.card').forEach(card => {
+                    if (playedCards.has(card.dataset.id)) {
+                        card.classList.add('played');
+                    }
+                });
+                updateStats();
+            }
+        }
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') resetAll();
+            if (e.key === 'z' && (e.ctrlKey || e.metaKey)) {
+                e.preventDefault();
+                undoLast();
+            }
+            if (e.key === 'h') toggleView();
+        });
+
+        // Initialize
+        init();
+        loadState();
+    </script>
+</body>
+</html>
